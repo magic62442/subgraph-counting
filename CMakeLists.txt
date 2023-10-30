@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 14)
 IF(NOT APPLE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 ENDIF()
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer")
 
 include_directories(
         ${PROJECT_SOURCE_DIR}/config
@@ -25,7 +24,7 @@ link_directories(
         ${PROJECT_SOURCE_DIR}/counting
 )
 
-# link to GLPK
+# link to GLPK. edit the paths based on your environment
 IF(NOT APPLE)
     include_directories($ENV{HOME}/.local/include)
     link_directories($ENV{HOME}/.local/lib)
@@ -41,5 +40,3 @@ add_subdirectory(executable)
 add_subdirectory(plan)
 add_subdirectory(counting)
 
-add_executable(test.out test.cpp)
-target_link_libraries(test.out graph utility plan counting)

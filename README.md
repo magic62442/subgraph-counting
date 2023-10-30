@@ -11,17 +11,7 @@ We study local subgraph counting queries, Q = (p, o), to count how many times a 
 ```shell
 cd utility/automorphism/
 ./configure
-make
-mv nauty.a libnauty.a
-```
-
-If it complains, "relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a shared object; recompile with the "-fPIC" option. 
-
-```shell
-cd utility/automorphism/
-vim makefile
-# add -fPIC to the end of line 6.
-make
+make -j
 mv nauty.a libnauty.a
 ```
 
@@ -33,7 +23,17 @@ mv nauty.a libnauty.a
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make
+make -j
+```
+
+If it reports the error "relocation R_X86_64_32 against `.rodata.str1.8' can not be used when making a shared object; recompile with -fPIC" during the compilation, edit the makefile of nauty and recompile. 
+
+```shell
+cd utility/automorphism/
+sed -i '6s/$/ -fPIC/' makefile
+make clean
+make -j
+mv nauty.a libnauty.a
 ```
 
 ## Input format
@@ -80,13 +80,13 @@ Command line options:
 | -t     | the intersection cache path, optional                        |
 | -r     | the result path (single query) or directory (batch query), optional |
 | -b     | with -b: batch query, without -b: single query               |
-| -share | with -share: enable sharing, without -share: disable sharing |
+| -share | with -share: enable sharing (only for 5-node queries), without -share: disable sharing |
 
 Example:
 
 ```
-./build/executable/scope.out -q ./exp/pattern_graph/q1 -d ./exp/data_graph/web-spam.txt -t ./exp/data_graph/web-spamt.bin -r ./result/q1/web-spam -b -share
-./build/executable/scope.out -q ./exp/pattern_graph/q1/34.txt -d ./exp/data_graph/web-spam.txt -r ./result/q1/web-spam/34.txt -share
+./build/executable/scope.out -q ./exp/pattern_graph/5node -d ./exp/data_graph/web-spam.txt -t ./exp/data_graph/web-spamt.bin -r ./result/5node/web-spam -b -share
+./build/executable/scope.out -q ./exp/pattern_graph/5node/34.txt -d ./exp/data_graph/web-spam.txt -r ./result/5node/web-spam/34.txt
 ```
 
 In the output, the $i$-th line shows the local subgraph count of the data node $i-1$.

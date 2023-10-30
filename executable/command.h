@@ -15,9 +15,7 @@ enum OptionKeyword {
     TrianglePath = 3,       // -t, the triangle binary file path
     ResultPath = 4,         // -r, the result file path
     BatchQuery = 5,         // -b, batch query or single query
-    SingleAggregation = 6,  // -single, enforce single vertex/edge aggregation or not
-    ShareNode = 7,          // -share, enable sharing nodes or not
-    BaselineType = 8        // -a, the baseline type
+    ShareNode = 6,          // -share, enable sharing nodes or not
 };
 
 class Command : public CommandParser {
@@ -53,16 +51,8 @@ public:
         return booleanOptionValue[OptionKeyword::BatchQuery];
     }
 
-    bool getSingleAggregation() {
-        return booleanOptionValue[OptionKeyword::SingleAggregation];
-    }
-
     bool getShareNode() {
         return booleanOptionValue[OptionKeyword::ShareNode];
-    }
-
-    int getBaselineType() {
-        return intOptionValue[OptionKeyword::BaselineType];
     }
 };
 

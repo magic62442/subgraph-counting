@@ -12,16 +12,14 @@ int main(int argc, char **argv) {
     std::string resultPath = cmd.getResultPath();
     std::string trianglePath = cmd.getTrianglePath();
     bool batchQuery = cmd.getBatchQuery();
-    bool singleAggregation = cmd.getSingleAggregation();
     bool shareNode = cmd.getShareNode();
     bool useTriangle = !trianglePath.empty();
     std::cout << "query graph path: " << queryGraphPath << std::endl;
     std::cout << "data graph path: " << dataGraphPath << std::endl;
     std::cout << "result path: " << resultPath << std::endl;
     std::cout << "using batch query: " << batchQuery << std::endl;
-    std::cout << "using multi aggregation: " << !singleAggregation << std::endl;
     std::cout << "sharing nodes computation: " << shareNode << std::endl;
-    std::cout << "using triangle: " << useTriangle << std::endl;
+    std::cout << "using intersection cache: " << useTriangle << std::endl;
     std::cout << "set intersection type: " << SI << std::endl;
     DataGraph dun = DataGraph();
     dun.loadDataGraph(dataGraphPath);
