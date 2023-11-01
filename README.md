@@ -2,7 +2,7 @@
 
 ## Background
 
-We study local subgraph counting queries, Q = (p, o), to count how many times a given k-node pattern graph p appears around every node v in a data graph G when the given node orbit o in p maps to v. 
+We study local subgraph counting queries, Q = (p, o), to count how many times a given k-node pattern graph p appears around every node v in a data graph G when the given center node o in p maps to v. 
 
 ## Compile
 
@@ -26,7 +26,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j
 ```
 
-If it reports the error "relocation R_X86_64_32 against `.rodata.str1.8' can not be used when making a shared object; recompile with -fPIC" during the compilation, edit the makefile of nauty and recompile. 
+During the compilation, if it reports the error "relocation R_X86_64_32 against `.rodata.str1.8' can not be used when making a shared object; recompile with -fPIC", you should edit the makefile of nauty and recompile. 
 
 ```shell
 cd utility/automorphism/
@@ -48,7 +48,7 @@ Example:
 1 2
 ```
 
-The query graph file has an additional line, '1 id', where 'id' is this pattern's orbit(representative).
+The query graph file has an additional line, '1 id', where 'id' is this pattern's orbit(center node).
 
 Example:
 
