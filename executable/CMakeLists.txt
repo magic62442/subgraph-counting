@@ -1,7 +1,7 @@
 include_directories(../utility/automorphism)
 link_directories(../utility/automorphism)
 set (PREPROCESS_SRC
-        preprocess.cpp)
+        prepare.cpp)
 set (SCOPE_SRC
         scope.cpp)
 add_executable(preprocess.out ${PREPROCESS_SRC})

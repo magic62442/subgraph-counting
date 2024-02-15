@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/11/21.
+// Created by anonymous author on 2022/11/21.
 //
 
 #include "utils.h"
@@ -175,4 +175,89 @@ std::vector<std::vector<std::vector<VertexID>>> generateCliqueRules(const std::v
     }
 
     return newCandRules;
+}
+
+void write2DVectorPairToStream(std::ofstream& outFile, const std::vector<std::vector<std::pair<int, int>>>& vec) {
+    size_t outerSize = vec.size();
+    outFile.write(reinterpret_cast<const char*>(&outerSize), sizeof(outerSize));
+
+    for (const auto& innerVec : vec) {
+        size_t innerSize = innerVec.size();
+        outFile.write(reinterpret_cast<const char*>(&innerSize), sizeof(innerSize));
+
+        for (const auto& pair : innerVec) {
+            outFile.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
+            outFile.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+        }
+    }
+}
+
+void read2DVectorPairFromStream(std::ifstream& inFile, std::vector<std::vector<std::pair<int, int>>>& vec) {
+    size_t outerSize;
+    inFile.read(reinterpret_cast<char*>(&outerSize), sizeof(outerSize));
+    vec.resize(outerSize);
+
+    for (auto& innerVec : vec) {
+        size_t innerSize;
+        inFile.read(reinterpret_cast<char*>(&innerSize), sizeof(innerSize));
+        innerVec.resize(innerSize);
+
+        for (auto& pair : innerVec) {
+            inFile.read(reinterpret_cast<char*>(&pair.first), sizeof(pair.first));
+            inFile.read(reinterpret_cast<char*>(&pair.second), sizeof(pair.second));
+        }
+    }
+}
+
+void writeVectorPairToStream(std::ofstream& outFile, const std::vector<std::pair<int, int>>& vec) {
+    size_t size = vec.size();
+    outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    for (const auto& pair : vec) {
+        outFile.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
+        outFile.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+    }
+}
+
+void readVectorPairFromStream(std::ifstream& inFile, std::vector<std::pair<int, int>>& vec) {
+    size_t size;
+    inFile.read(reinterpret_cast<char*>(&size), sizeof(size));
+    vec.resize(size);
+
+    for (auto& pair : vec) {
+        inFile.read(reinterpret_cast<char*>(&pair.first), sizeof(pair.first));
+        inFile.read(reinterpret_cast<char*>(&pair.second), sizeof(pair.second));
+    }
+}
+
+std::string pathJoin(const std::string& part1, const std::string& part2) {
+    if (part1.empty()) {
+        return part2;
+    }
+    if (part2.empty()) {
+        return part1;
+    }
+
+    // Define the directory separator
+#ifdef _WIN32
+    const char sep = '\\';
+#else
+    const char sep = '/';
+#endif
+
+    std::string result = part1;
+
+    // Add separator if needed
+    if (result.back() != sep) {
+        result += sep;
+    }
+
+    // Append the second part, avoiding double separator if it starts with one
+    if (part2.front() == sep) {
+        result += part2.substr(1);
+    } else {
+        result += part2;
+    }
+
+    return result;
 }

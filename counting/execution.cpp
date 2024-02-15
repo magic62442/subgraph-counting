@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/8/29.
+// Created by anonymous author on 2022/8/29.
 //
 
 #include "execution.h"
@@ -338,7 +338,7 @@ ui computeEdgeKey(
             break;
         case 3:
 #ifdef COLLECT_STATISTICS
-        ++gNumEdgeID;
+            ++gNumEdgeID;
 #endif
             edgeID = dout.getEdgeID(src, dst);
             break;
@@ -2688,7 +2688,7 @@ void multiJoinET(
                 else memset(H[cID], 0, sizeof(Count) * m);
             }
             multiJoinWrapper(cID, t, t.getChild()[cID], candidates, candCounts, H, din, dout, dun, true, tri, p, outID, unID,
-                        reverseID, startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
+                             reverseID, startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
             for (int j = 0; j < prefixPos[cID].size(); ++j) {
                 visits[cID][dataVs[cID][j]] = false;
             }
@@ -2819,7 +2819,7 @@ void multiJoinET(
                     else memset(H[cID], 0, sizeof(Count) * m);
                 }
                 multiJoinWrapper(cID, t, t.getChild()[cID], candidates, candCounts, H, din, dout, dun, true, tri, p, outID, unID,
-                            reverseID, startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
+                                 reverseID, startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
                 for (int j = 0; j < prefixPos[cID].size(); ++j) {
                     visits[cID][dataVs[cID][j]] = false;
                 }
@@ -2990,11 +2990,11 @@ void multiJoinWrapper(
     if (!useTriangle) {
         if (!edgeKey) {
             multiJoin(nID, t, child, candidates, candCounts, H, din, dout, dun, tri, p, outID, unID, reverseID,
-                        startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
+                      startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
         }
         else {
             multiJoinE(nID, t, child, candidates, candCounts, H, din, dout, dun, tri, p, outID, unID, reverseID,
-                        startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
+                       startOffsets, patternVs, dataVs, visits, poses, keyPoses, keyPosSizes, sizeBounds, tmp, allV);
         }
     }
     else {
@@ -5242,7 +5242,7 @@ void executeForest(Forest &f, std::vector<HashTable> &result, const DataGraph &d
             noPrefixParams.push_back(param);
         }
     }
-     for (ExeParam &param : noPrefixParams) {
+    for (ExeParam &param : noPrefixParams) {
         executeShared(param, keyPoses, keyPosSize, sizeBound, din, dout, dun, useTriangle, tri, outID, unID, reverseID,
                       startOffset, patternV, dataV, 0, visited, candPos, tmp, allV);
     }

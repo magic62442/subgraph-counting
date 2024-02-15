@@ -12,7 +12,7 @@
 static std::map<CanonType, std::vector<Tree>> gCanon2Tree;
 static std::map<CanonType, Pattern> gCanon2Pattern;
 static std::map<CanonType, std::vector<Pattern>> gCanon2Shrinkage;
-extern double gShrinkTime;
+extern double gEquationTime;
 
 std::vector<VertexID> mergePair(
         const std::vector<std::vector<VertexID>> &independentPartitions,
@@ -35,8 +35,6 @@ std::vector<VertexID> mergePairHomo(
 );
 std::vector<Pattern> homoShrinkage(const Pattern &p);
 std::vector<Pattern> homoShrinkage(const Pattern &p, std::vector<int> &mu);
-void homoEquationOld(const PatternGraph &p, std::map<int, std::vector<Pattern>> &patterns,
-                     std::map<int, std::vector<std::vector<Tree>>> &trees, bool prefix);
 void homoEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &patterns,
                   std::map<int, std::vector<std::vector<Tree>>> &trees, bool prefix);
 

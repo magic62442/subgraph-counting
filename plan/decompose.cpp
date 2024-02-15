@@ -1,12 +1,23 @@
 //
-// Created by Qiyan LI on 2022/8/2.
+// Created by anonymous author on 2022/8/2.
 //
 
 #include "decompose.h"
 
+double gSymmTime = 0.0, gOrderTime = 0.0;
+
 // the return value is the factor to be divided by the count
 int computeNumRules(Tree &t, const PatternGraph &p) {
-    return t.computeSymmetryRules(p);
+#ifdef ONLY_PLAN
+    auto start = std::chrono::steady_clock::now();
+#endif
+    int numRules = t.computeSymmetryRules(p);
+#ifdef ONLY_PLAN
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsedSeconds = end - start;
+    gSymmTime += elapsedSeconds.count();
+#endif
+    return numRules;
 }
 
 std::vector<std::vector<Tree>>
@@ -36,12 +47,6 @@ minWidthMaxSymmTrees(const Pattern &p, std::vector<Tree> allTree, bool sign, int
                 rootedTree[i].setNodeCanon(id2CanonV, id2Orbits, id2AutoSize, j, p);
             }
         }
-        if (!iterationNotIncrease(rootedTree[0], p, prefix)) {
-            if (p.u.getNumVertices() <= 5) continue;
-            rootedTree[0].setExecuteMode(false);
-            if (!p.useDAG()) numRules = computeNumRules(rootedTree[0], p.u);
-            treeBestOrder(p, rootedTree[0], useTriangle, prefix);
-        }
         for (auto &rt: rootedTree) rt.computeWidths(p.u);
         double fhw = rootedTree[0].getFhw();
         ui treeWidth = rootedTree[0].getTreeWidth();
@@ -52,6 +57,24 @@ minWidthMaxSymmTrees(const Pattern &p, std::vector<Tree> allTree, bool sign, int
             (fhw == minFHW && treeWidth == minVertices && sumWidth > minSum) ||
             (fhw == minFHW && treeWidth == minVertices && sumWidth == minSum && numSources > minSources))
             continue;
+#ifdef ONLY_PLAN
+        auto start = std::chrono::steady_clock::now();
+#endif
+        if (!iterationNotIncrease(rootedTree[0], p, prefix)) {
+#ifdef ONLY_PLAN
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::duration<double> elapsedSeconds = end - start;
+            gOrderTime += elapsedSeconds.count();
+#endif
+            if (p.u.getNumVertices() <= 5) continue;
+            rootedTree[0].setExecuteMode(false);
+            if (!p.useDAG()) numRules = computeNumRules(rootedTree[0], p.u);
+            treeBestOrder(p, rootedTree[0], useTriangle, prefix);
+            rootedTree[0].computeWidths(p.u);
+            treeWidth = rootedTree[0].getTreeWidth();
+            sumWidth = rootedTree[0].getSumWidth();
+            numSources = rootedTree[0].getMaxNumSource();
+        }
         for (auto &rt: rootedTree) {
             if (!p.useDAG()) {
                 for (VertexID nID = 0; nID < rt.getNumNodes(); ++nID) {
@@ -545,6 +568,9 @@ getBestDecomposition(const Pattern &p, const std::vector<Tree> &allTree, std::ve
     int numRules;
     std::vector<std::vector<Tree>> allRootedTree = minWidthMaxSymmTrees(p, allTree, sign, numRules, prefix, useTriangle);
     // now all rooted tree are those with maximum number of rules
+#ifdef ONLY_PLAN
+    auto start = std::chrono::steady_clock::now();
+#endif
     ui minWidth2 = 99, minWidth2Sum = 99, minWidth3 = 99;
     ui minEdgePos = 99;
     std::vector<Tree> result;
@@ -863,7 +889,11 @@ getBestDecomposition(const Pattern &p, const std::vector<Tree> &allTree, std::ve
         if (t.getExecuteMode()) t.initPoses(p, useTriangle);
         else t.initMultiJoinPoses(p, useTriangle);
     }
-
+#ifdef ONLY_PLAN
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsedSeconds = end - start;
+    gOrderTime += elapsedSeconds.count();
+#endif
     return result;
 }
 
@@ -1274,7 +1304,7 @@ std::vector<Tree> DISCDecomposition(const Pattern &p, const std::vector<Tree> &a
                     for (int j = 0; j < numNodes; ++j) {
                         VertexID nID = postOrder[position + j];
                         bestLocalOrder(tCopy, nID, candidatePermutation, p, localOrderNode[j],
-                                               width3Node[j], edgePosNode[j], useTriangle);
+                                       width3Node[j], edgePosNode[j], useTriangle);
                     }
                     // check whether there is a visited node that is the same with tau
                     // if so, reset the node width
@@ -1973,7 +2003,7 @@ int subgraphSymmetry(const PatternGraph &p, const Node &tau, std::vector<std::ve
         for (int j = 0; j < i; ++j) {
             VertexID u2 = vertices[j];
             if (p.isEdge(u1, u2))
-                ADDONEEDGE(g, i, j, m);
+                    ADDONEEDGE(g, i, j, m);
         }
     }
     for (int i = 0; i < n; ++i)

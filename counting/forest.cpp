@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/9/15.
+// Created by anonymous author on 2022/9/15.
 //
 
 #include "forest.h"

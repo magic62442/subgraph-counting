@@ -1,9 +1,11 @@
 //
-// Created by Qiyan LI on 2022/8/2.
+// Created by anonymous author on 2022/8/2.
 //
 
 #include "tree.h"
 #include "decompose.h"
+
+double gTDTime = 0.0;
 
 Node::Node() {
     id = 0;
@@ -379,7 +381,7 @@ void Node::getCanonLabel(const PatternGraph &p) {
         for (int j = 0; j < numVertices; ++j) {
             VertexID u1 = vertices[i], u2 = vertices[j];
             if (p.isEdge(u1, u2)) {
-                ADDONEARC(g, old2new[u1], old2new[u2], m);
+                        ADDONEARC(g, old2new[u1], old2new[u2], m);
             }
         }
     }
@@ -469,7 +471,7 @@ void Node::computeValidRules(const PatternGraph &p, std::set<VertexID> &allCut) 
         for (int j = 0; j < numVertices; ++j) {
             VertexID u1 = vertices[i], u2 = vertices[j];
             if (p.isEdge(u1, u2)) {
-                ADDONEARC(g, old2new[u1], old2new[u2], m);
+                        ADDONEARC(g, old2new[u1], old2new[u2], m);
             }
         }
     }
@@ -604,7 +606,7 @@ void Node::computeCandidateRules(const PatternGraph &p, const std::vector<Vertex
         for (int j = 0; j < numVertices; ++j) {
             VertexID u1 = vertices[i], u2 = vertices[j];
             if (p.isEdge(u1, u2)) {
-                ADDONEARC(g, old2new[u1], old2new[u2], m);
+                        ADDONEARC(g, old2new[u1], old2new[u2], m);
                 ++numEdges;
             }
         }
@@ -798,6 +800,77 @@ void Node::cliqueNodeRules(const PatternGraph &p, const std::vector<VertexID *> 
     }
     std::vector<VertexID> v(internalVertices.begin(), internalVertices.end());
     candidateRules = generateCliqueRules(v, candidateRules);
+}
+
+void Node::readFromStream(std::ifstream &inFile) {
+    // Read simple types directly
+    inFile.read(reinterpret_cast<char*>(&id), sizeof(id));
+    inFile.read(reinterpret_cast<char*>(&numVertices), sizeof(numVertices));
+    inFile.read(reinterpret_cast<char*>(&numSources), sizeof(numSources));
+    inFile.read(reinterpret_cast<char*>(&cutSize), sizeof(cutSize));
+    inFile.read(reinterpret_cast<char*>(&prefixSize), sizeof(prefixSize));
+    inFile.read(reinterpret_cast<char*>(&keySize), sizeof(keySize));
+    inFile.read(reinterpret_cast<char*>(&autoSize), sizeof(autoSize));
+    inFile.read(reinterpret_cast<char*>(&canonValue), sizeof(canonValue));
+    inFile.read(reinterpret_cast<char*>(&subPatternCanon), sizeof(subPatternCanon));
+    inFile.read(reinterpret_cast<char*>(&keyOrbit), sizeof(keyOrbit));
+    inFile.read(reinterpret_cast<char*>(&numRules), sizeof(numRules));
+    inFile.read(reinterpret_cast<char*>(&subPatternRules), sizeof(subPatternRules));
+    inFile.read(reinterpret_cast<char*>(&edgeKey), sizeof(edgeKey));
+    inFile.read(reinterpret_cast<char*>(&unEdgeKey), sizeof(unEdgeKey));
+    inFile.read(reinterpret_cast<char*>(&numIn), sizeof(numIn));
+    inFile.read(reinterpret_cast<char*>(&fw), sizeof(fw));
+
+    // Read arrays
+    readArrayFromStream(inFile, vertices, numVertices);
+    readArrayFromStream(inFile, cut, cutSize);
+    readArrayFromStream(inFile, prefix, prefixSize);
+    readArrayFromStream(inFile, key, keySize);
+    readArrayFromStream(inFile, v2o, numVertices);  // Assuming numVertices is the correct size
+
+    // Read vectors
+    readVectorFromStream(inFile, localOrder);
+    readVectorFromStream(inFile, nodeOrder);
+    // Read 2D array (automorphisms)
+    read2DArrayFromStream(inFile, automorphisms, autoSize, numVertices);
+    // Read complex nested vector (candidateRules)
+    read3DVectorFromStream(inFile, candidateRules);
+}
+
+void Node::writeToStream(std::ofstream &outFile) {
+    if (automorphisms == nullptr) autoSize = 0;
+    // Write simple types directly
+    outFile.write(reinterpret_cast<const char*>(&id), sizeof(id));
+    outFile.write(reinterpret_cast<const char*>(&numVertices), sizeof(numVertices));
+    outFile.write(reinterpret_cast<const char*>(&numSources), sizeof(numSources));
+    outFile.write(reinterpret_cast<const char*>(&cutSize), sizeof(cutSize));
+    outFile.write(reinterpret_cast<const char*>(&prefixSize), sizeof(prefixSize));
+    outFile.write(reinterpret_cast<const char*>(&keySize), sizeof(keySize));
+    outFile.write(reinterpret_cast<const char*>(&autoSize), sizeof(autoSize));
+    outFile.write(reinterpret_cast<const char*>(&canonValue), sizeof(canonValue));
+    outFile.write(reinterpret_cast<const char*>(&subPatternCanon), sizeof(subPatternCanon));
+    outFile.write(reinterpret_cast<const char*>(&keyOrbit), sizeof(keyOrbit));
+    outFile.write(reinterpret_cast<const char*>(&numRules), sizeof(numRules));
+    outFile.write(reinterpret_cast<const char*>(&subPatternRules), sizeof(subPatternRules));
+    outFile.write(reinterpret_cast<const char*>(&edgeKey), sizeof(edgeKey));
+    outFile.write(reinterpret_cast<const char*>(&unEdgeKey), sizeof(unEdgeKey));
+    outFile.write(reinterpret_cast<const char*>(&numIn), sizeof(numIn));
+    outFile.write(reinterpret_cast<const char*>(&fw), sizeof(fw));
+
+    // Write arrays
+    writeArrayToStream(outFile, vertices, numVertices);
+    writeArrayToStream(outFile, cut, cutSize);
+    writeArrayToStream(outFile, prefix, prefixSize);
+    writeArrayToStream(outFile, key, keySize);
+    writeArrayToStream(outFile, v2o, numVertices);  // Assuming numVertices is the correct size
+
+    // Write vectors
+    writeVectorToStream(outFile, localOrder);
+    writeVectorToStream(outFile, nodeOrder);
+    // Write 2D array (automorphisms)
+    write2DArrayToStream(outFile, automorphisms, autoSize, numVertices);
+    // Write complex nested vector (candidateRules)
+    write3DVectorToStream(outFile, candidateRules);
 }
 
 Tree::Tree() {
@@ -2087,7 +2160,7 @@ int Tree::computeSymmetryRules(const PatternGraph &p) {
                         for (const VertexID &w: rule)
                             ruleID += 1 << w;
                         if (invalidIDs.find(ruleID) != invalidIDs.end() || selectedIDs.find(ruleID) != selectedIDs.end()
-                        || notSelectedIDs.find(ruleID) != notSelectedIDs.end())
+                            || notSelectedIDs.find(ruleID) != notSelectedIDs.end())
                             continue;
                         // collect nodes contain rule, check whether rule is consistent in these nodes and compute rule num
                         bool consistent = true;
@@ -2605,7 +2678,7 @@ void Tree::initPoses(const Pattern &p, bool useTriangle) {
                         _nodes[nID].edgeKey = true;
                     }
                 }
-                // root
+                    // root
                 else {
                     if (_orbitType == 0) {
                         _aggrePos[nID].push_back(0);
@@ -2754,7 +2827,7 @@ void Tree::initPoses(const Pattern &p, bool useTriangle) {
                         ++numNeighbor[k];
                         if (!directed) {
                             if (std::find(_greaterRules[tau.nodeOrder[k]].begin(), _greaterRules[tau.nodeOrder[k]].end(),
-                                               tau.nodeOrder[l]) != _greaterRules[tau.nodeOrder[k]].end()) {
+                                          tau.nodeOrder[l]) != _greaterRules[tau.nodeOrder[k]].end()) {
                                 _nodeOutPos[nID][k].push_back(l);
                             }
                             else if (std::find(_lessRules[tau.nodeOrder[k]].begin(), _lessRules[tau.nodeOrder[k]].end(),
@@ -2869,7 +2942,7 @@ void Tree::initPoses(const Pattern &p, bool useTriangle) {
                 }
             }
         }
-        // root
+            // root
         else if (_orbitType == 2) {
             _aggreEdgeType[nID] = std::vector<int>(_aggrePos.size() / 2);
             if (p.u.isEOrbitDir()) {
@@ -2931,7 +3004,7 @@ void Tree::initPoses(const Pattern &p, bool useTriangle) {
                         if (!_nodeInterPos[nID][p2]) {
                             if (!directed) {
                                 if (std::find(_lessRules[u2].begin(), _lessRules[u2].end(),
-                                                   u1) != _lessRules[u2].end()) {
+                                              u1) != _lessRules[u2].end()) {
                                     _triEdgeType[nID][i] = 2;
                                 }
                                 else if (std::find(_greaterRules[u2].begin(), _greaterRules[u2].end(),
@@ -3184,7 +3257,7 @@ void Tree::initMultiJoinPoses(const Pattern &p, bool useTriangle) {
                     }
                 }
             }
-            // root
+                // root
             else {
                 if (_orbitType == 0) {
                     _aggrePos[nID].push_back(0);
@@ -3527,7 +3600,7 @@ void Tree::initMultiJoinPoses(const Pattern &p, bool useTriangle) {
                 int pos1 = _nodeTriPos[nID][i].first, pos2 = _nodeTriPos[nID][i].second;
                 if (pos2 >= _nodes[nID].prefixSize) continue;
                 int pPos1 = _prefixPos[nID][pos1], pPos2 = _prefixPos[nID][pos2];
-                if (_nodeInterPos[pID][pPos2]) _triEdgeType[nID][i] = 3;
+                if (_nodeInterPos[pID][pPos2] || pPos2 < _nodes[pID].prefixSize) _triEdgeType[nID][i] = 3;
             }
         }
         for (int i = 0; i < _childKeyPos[nID].size(); ++i) {
@@ -3537,8 +3610,9 @@ void Tree::initMultiJoinPoses(const Pattern &p, bool useTriangle) {
                 int smallerPos = pos1 < pos2 ? pos1 : pos2;
                 if (pos >= _nodes[nID].prefixSize) continue;
                 int pPos = _prefixPos[nID][pos];
-                if (_nodeInterPos[pID][pPos]) {
-                    if (std::find(_nodeUnPos[nID][pos].begin(), _nodeUnPos[nID][pos].end(), smallerPos) == _nodeUnPos[nID][pos].end())
+                if (_nodeInterPos[pID][pPos] || pPos < _nodes[pID].prefixSize) {
+                    if (std::find(_nodeUnPos[nID][pos].begin(), _nodeUnPos[nID][pos].end(), smallerPos) == _nodeUnPos[nID][pos].end()
+                        && !_nodeInterPos[nID][pos])
                         _childEdgeType[nID][i] = 3;
                     else {
                         _childEdgeType[nID][i] = 4;
@@ -3552,8 +3626,9 @@ void Tree::initMultiJoinPoses(const Pattern &p, bool useTriangle) {
             int smallerPos = pos1 < pos2 ? pos1 : pos2;
             if (pos >= _nodes[nID].prefixSize) continue;
             int pPos = _prefixPos[nID][pos];
-            if (_nodeInterPos[pID][pPos]) {
-                if (std::find(_nodeUnPos[nID][pos].begin(), _nodeUnPos[nID][pos].end(), smallerPos) == _nodeUnPos[nID][pos].end())
+            if (_nodeInterPos[pID][pPos] || pPos < _nodes[pID].prefixSize) {
+                if (std::find(_nodeUnPos[nID][pos].begin(), _nodeUnPos[nID][pos].end(), smallerPos) == _nodeUnPos[nID][pos].end()
+                    && !_nodeInterPos[nID][pos])
                     _aggreEdgeType[nID][0] = 3;
                 else {
                     _aggreEdgeType[nID][0] = 4;
@@ -3756,6 +3831,7 @@ void Tree::computeNodeRules(VertexID nID, const PatternGraph &p) {
 }
 
 void Tree::computeWidths(const PatternGraph &p) {
+    _sumWidth = 0;
     if (_executeMode) {
         for (VertexID nID = 0; nID < _numNodes; ++nID) {
             Node &tau = _nodes[nID];
@@ -3988,10 +4064,185 @@ std::vector<Tree> Tree::realTree(const Pattern &p, bool sign) {
     return result;
 }
 
+void Tree::writeToFile(const std::string &filename) {
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile) {
+        throw std::runtime_error("Unable to open file for writing");
+    }
+
+    // Write simple attributes
+    outFile.write(reinterpret_cast<const char*>(&_numVertices), sizeof(_numVertices));
+    outFile.write(reinterpret_cast<const char*>(&_multiFactor), sizeof(_multiFactor));
+    outFile.write(reinterpret_cast<const char*>(&_numNodes), sizeof(_numNodes));
+    outFile.write(reinterpret_cast<const char*>(&_numRules), sizeof(_numRules));
+    outFile.write(reinterpret_cast<const char*>(&_orbitType), sizeof(_orbitType));
+    outFile.write(reinterpret_cast<const char*>(&_treeWidth), sizeof(_treeWidth));
+    outFile.write(reinterpret_cast<const char*>(&_sumWidth), sizeof(_sumWidth));
+    outFile.write(reinterpret_cast<const char*>(&_maxNumSource), sizeof(_maxNumSource));
+    outFile.write(reinterpret_cast<const char*>(&_fhw), sizeof(_fhw));
+    outFile.write(reinterpret_cast<const char*>(&_executeMode), sizeof(_executeMode));
+
+    // Write Node array
+    for (ui i = 0; i < _numNodes; ++i) {
+        _nodes[i].writeToStream(outFile); // Assuming Node::writeToStream is implemented
+    }
+
+    // Write vectors and other complex attributes
+    for (ui i = 0; i < _numVertices; ++i) {
+        writeVectorToStream(outFile, _v2n[i]);
+    }
+    write2DVectorToStream(outFile, _edges);
+    writeArrayToStream(outFile, _parent, _numNodes);
+    write2DVectorToStream(outFile, _child);
+    write2DVectorToStream(outFile, _greaterRules);
+    write2DVectorToStream(outFile, _lessRules);
+    writeVectorToStream(outFile, _aggreV);
+    writeVectorToStream(outFile, _aggreWeight);
+    writeVectorToStream(outFile, _postOrder);
+    writeVectorToStream(outFile, _partitionPos);
+    write3DVectorToStream(outFile, _nodesAtStep);
+    write2DVectorToStream(outFile, _prefixPos);
+    write2DVectorToStream(outFile, _globalOrder);
+    write2DVectorToStream(outFile, _aggrePos);
+    write2DVectorToStream(outFile, _partitionInterPos);
+    write2DVectorToStream(outFile, _nodeInterPos);
+    write3DVectorToStream(outFile, _nodeInPos);
+    write3DVectorToStream(outFile, _nodeOutPos);
+    write3DVectorToStream(outFile, _nodeUnPos);
+    write3DVectorToStream(outFile, _nodeGreaterPos);
+    write3DVectorToStream(outFile, _nodeLessPos);
+    write3DVectorToStream(outFile, _partitionInPos);
+    write3DVectorToStream(outFile, _partitionOutPos);
+    write3DVectorToStream(outFile, _partitionUnPos);
+    write3DVectorToStream(outFile, _partitionGreaterPos);
+    write3DVectorToStream(outFile, _partitionLessPos);
+    write3DVectorToStream(outFile, _childKeyPos);
+    write3DVectorToStream(outFile, _posChildEdge);
+    write3DVectorToStream(outFile, _posAggreEdge);
+    write2DVectorToStream(outFile, _childEdgeType);
+    write2DVectorToStream(outFile, _aggreEdgeType);
+    write2DVectorToStream(outFile, _nodeCandPos);
+    write2DVectorPairToStream(outFile, _nodeTriPos);
+    write2DVectorToStream(outFile, _triEdgeType);
+    write2DVectorToStream(outFile, _triEndType);
+    write2DVectorToStream(outFile, _partitionCandPos);
+    write2DVectorPairToStream(outFile, _partitionTriPos);
+    write2DVectorToStream(outFile, _partitionEdgeType);
+    write2DVectorToStream(outFile, _partitionEndType);
+
+    outFile.close();
+}
+
+void Tree::readFromFile(const std::string &filename) {
+    std::ifstream inFile(filename, std::ios::binary);
+    if (!inFile) {
+        throw std::runtime_error("Unable to open file for reading");
+    }
+
+    // Read simple attributes
+    inFile.read(reinterpret_cast<char*>(&_numVertices), sizeof(_numVertices));
+    inFile.read(reinterpret_cast<char*>(&_multiFactor), sizeof(_multiFactor));
+    inFile.read(reinterpret_cast<char*>(&_numNodes), sizeof(_numNodes));
+    inFile.read(reinterpret_cast<char*>(&_numRules), sizeof(_numRules));
+    inFile.read(reinterpret_cast<char*>(&_orbitType), sizeof(_orbitType));
+    inFile.read(reinterpret_cast<char*>(&_treeWidth), sizeof(_treeWidth));
+    inFile.read(reinterpret_cast<char*>(&_sumWidth), sizeof(_sumWidth));
+    inFile.read(reinterpret_cast<char*>(&_maxNumSource), sizeof(_maxNumSource));
+    inFile.read(reinterpret_cast<char*>(&_fhw), sizeof(_fhw));
+    inFile.read(reinterpret_cast<char*>(&_executeMode), sizeof(_executeMode));
+
+    // Allocate and read Node array
+    _nodes = new Node[_numNodes];
+    for (ui i = 0; i < _numNodes; ++i) {
+        _nodes[i].readFromStream(inFile); // Assuming Node::readFromStream is implemented
+    }
+    _v2n = new std::vector<VertexID>[_numVertices];
+    for (ui i = 0; i < _numVertices; ++i) {
+        readVectorFromStream(inFile, _v2n[i]);
+    }
+    // Read vectors and other complex attributes
+    read2DVectorFromStream(inFile, _edges);
+    readArrayFromStream(inFile, _parent, _numNodes);
+    read2DVectorFromStream(inFile, _child);
+    read2DVectorFromStream(inFile, _greaterRules);
+    read2DVectorFromStream(inFile, _lessRules);
+    readVectorFromStream(inFile, _aggreV);
+    readVectorFromStream(inFile, _aggreWeight);
+    readVectorFromStream(inFile, _postOrder);
+    readVectorFromStream(inFile, _partitionPos);
+    read3DVectorFromStream(inFile, _nodesAtStep);
+    read2DVectorFromStream(inFile, _prefixPos);
+    read2DVectorFromStream(inFile, _globalOrder);
+    read2DVectorFromStream(inFile, _aggrePos);
+    read2DVectorFromStream(inFile, _partitionInterPos);
+    read2DVectorFromStream(inFile, _nodeInterPos);
+    read3DVectorFromStream(inFile, _nodeInPos);
+    read3DVectorFromStream(inFile, _nodeOutPos);
+    read3DVectorFromStream(inFile, _nodeUnPos);
+    read3DVectorFromStream(inFile, _nodeGreaterPos);
+    read3DVectorFromStream(inFile, _nodeLessPos);
+    read3DVectorFromStream(inFile, _partitionInPos);
+    read3DVectorFromStream(inFile, _partitionOutPos);
+    read3DVectorFromStream(inFile, _partitionUnPos);
+    read3DVectorFromStream(inFile, _partitionGreaterPos);
+    read3DVectorFromStream(inFile, _partitionLessPos);
+    read3DVectorFromStream(inFile, _childKeyPos);
+    read3DVectorFromStream(inFile, _posChildEdge);
+    read3DVectorFromStream(inFile, _posAggreEdge);
+    read2DVectorFromStream(inFile, _childEdgeType);
+    read2DVectorFromStream(inFile, _aggreEdgeType);
+    read2DVectorFromStream(inFile, _nodeCandPos);
+    read2DVectorPairFromStream(inFile, _nodeTriPos);
+    read2DVectorFromStream(inFile, _triEdgeType);
+    read2DVectorFromStream(inFile, _triEndType);
+    read2DVectorFromStream(inFile, _partitionCandPos);
+    read2DVectorPairFromStream(inFile, _partitionTriPos);
+    read2DVectorFromStream(inFile, _partitionEdgeType);
+    read2DVectorFromStream(inFile, _partitionEndType);
+
+    inFile.close();
+}
+
+void Tree::wheel9Tree() {
+    _multiFactor = 1;
+    _numNodes = 6;
+    _numVertices = 9;
+    _nodes = new Node[_numNodes];
+    VertexID vertices[6][4] = {{0, 1, 2, 3}, {0, 1, 3, 8}, {0, 3, 4, 8}, {0, 4, 7, 8}, {0, 4, 5, 7}, {0, 5, 6, 7}};
+    _v2n = new std::vector<ui>[_numVertices];
+    _edges = std::vector<std::vector<VertexID>>(_numNodes);
+    _child = std::vector<std::vector<VertexID>>(_numNodes);
+    _numRules = 0;
+    _greaterRules = std::vector<std::vector<VertexID>>(_numVertices);
+    _lessRules = std::vector<std::vector<VertexID>>(_numVertices);
+    _parent = new VertexID[_numNodes];
+    _parent[0] = 99;
+    _edges[0].push_back(1);
+    for (VertexID nID = 0; nID < _numNodes; ++nID) {
+        _nodes[nID].numVertices = 4;
+        _nodes[nID].vertices = vertices[nID];
+        for (int i = 0; i < 4; ++i) {
+            _nodes[nID].id += 1 << vertices[nID][i];
+        }
+        if (nID > 0) {
+            _edges[nID].push_back(nID - 1);
+            _edges[nID].push_back(nID + 1);
+            _parent[nID] = nID - 1;
+        }
+        if (nID < 5) _child[nID].push_back(nID + 1);
+    }
+    _orbitType = 1;
+    _treeWidth = 4;
+    _sumWidth = 24;
+    _maxNumSource = 0;
+    _fhw = 2.0;
+    _executeMode = true;
+}
+
 ConNode::ConNode(const PatternGraph &p, const Tree &t) {
     num = 0;
     numRules = 0;
-    if (t.getNumNodes() < 2) return;
+    if (t.getNumNodes() < 2 || !t.getExecuteMode()) return;
     const Node &tau = t.getNode(0);
     VertexID *cut = tau.cut;
     ui cutSize = tau.cutSize;
@@ -4214,7 +4465,7 @@ void ConNode::initPoses(const std::vector<VertexID> &pOrder, const std::vector<V
                     flag = true;
                     if (!interPos[p2]) {
                         if (std::find(lessRules[u2].begin(), lessRules[u2].end(),
-                                           u1) != lessRules[u2].end()) {
+                                      u1) != lessRules[u2].end()) {
                             triEdgeType[i] = 2;
                         }
                         else if (std::find(greaterRules[u2].begin(), greaterRules[u2].end(),
@@ -4387,13 +4638,80 @@ void ConNode::print() const {
     printf("divide factor : %d\n", divideFactor);
 }
 
+void ConNode::writeToStream(std::ofstream &outFile) {
+    // Write simple types
+    outFile.write(reinterpret_cast<const char*>(&num), sizeof(num));
+    outFile.write(reinterpret_cast<const char*>(&numRules), sizeof(numRules));
+    outFile.write(reinterpret_cast<const char*>(&divideFactor), sizeof(divideFactor));
+    outFile.write(reinterpret_cast<const char*>(&edgeKey), sizeof(edgeKey));
+    outFile.write(reinterpret_cast<const char*>(&uIn), sizeof(uIn));
+    outFile.write(reinterpret_cast<const char*>(&canonValue), sizeof(canonValue));
+    outFile.write(reinterpret_cast<const char*>(&orbitType), sizeof(orbitType));
+    outFile.write(reinterpret_cast<const char*>(&posChildEdge), sizeof(posChildEdge));
+    outFile.write(reinterpret_cast<const char*>(&childEdgeType), sizeof(childEdgeType));
+
+    // Write vectors
+    writeVectorToStream(outFile, cutVertices);
+    writeVectorToStream(outFile, nodeOrder);
+    writeVectorToStream(outFile, prefixOrder);
+    writeVectorToStream(outFile, childKeyPos);
+    writeVectorToStream(outFile, aggrePos);
+    writeVectorToStream(outFile, aggreType);
+    write2DVectorToStream(outFile, nodeInPos);
+    write2DVectorToStream(outFile, nodeOutPos);
+    write2DVectorToStream(outFile, nodeUnPos);
+    write2DVectorToStream(outFile, greaterPos);
+    write2DVectorToStream(outFile, lessPos);
+    writeVectorToStream(outFile, interPos);
+    writeVectorToStream(outFile, candPos);
+    writeVectorPairToStream(outFile, triPos); // Special function for vector of pairs
+    write2DVectorToStream(outFile, posAggreEdge);
+    writeVectorToStream(outFile, aggreEdgeType);
+    writeVectorToStream(outFile, triEdgeType);
+    writeVectorToStream(outFile, triEndType);
+}
+
+void ConNode::readFromStream(std::ifstream &inFile) {
+    // Read simple types
+    inFile.read(reinterpret_cast<char*>(&num), sizeof(num));
+    inFile.read(reinterpret_cast<char*>(&numRules), sizeof(numRules));
+    inFile.read(reinterpret_cast<char*>(&divideFactor), sizeof(divideFactor));
+    inFile.read(reinterpret_cast<char*>(&edgeKey), sizeof(edgeKey));
+    inFile.read(reinterpret_cast<char*>(&uIn), sizeof(uIn));
+    inFile.read(reinterpret_cast<char*>(&canonValue), sizeof(canonValue));
+    inFile.read(reinterpret_cast<char*>(&orbitType), sizeof(orbitType));
+    inFile.read(reinterpret_cast<char*>(&posChildEdge), sizeof(posChildEdge));
+    inFile.read(reinterpret_cast<char*>(&childEdgeType), sizeof(childEdgeType));
+
+    // Read vectors
+    readVectorFromStream(inFile, cutVertices);
+    readVectorFromStream(inFile, nodeOrder);
+    readVectorFromStream(inFile, prefixOrder);
+    readVectorFromStream(inFile, childKeyPos);
+    readVectorFromStream(inFile, aggrePos);
+    readVectorFromStream(inFile, aggreType);
+    read2DVectorFromStream(inFile, nodeInPos);
+    read2DVectorFromStream(inFile, nodeOutPos);
+    read2DVectorFromStream(inFile, nodeUnPos);
+    read2DVectorFromStream(inFile, greaterPos);
+    read2DVectorFromStream(inFile, lessPos);
+    readVectorFromStream(inFile, interPos);
+    readVectorFromStream(inFile, candPos);
+    readVectorPairFromStream(inFile, triPos); // Special function for vector of pairs
+    read2DVectorFromStream(inFile, posAggreEdge);
+    readVectorFromStream(inFile, aggreEdgeType);
+    readVectorFromStream(inFile, triEdgeType);
+    readVectorFromStream(inFile, triEndType);
+}
+
 // get all weakly connected node-induced subgraphs of p
 // those subgraphs are candidate tree nodes.
 // nodes in the result are ordered by the treewidth
 
 std::vector<Node> getAllNodes(const PatternGraph &p) {
     std::vector<Node> nodes;
-    std::queue<Node> q;
+    // fill the initial q with cliques
+    std::queue<Node> q = findMaximalCliques(p);
     ui coreSize;
     ui maxNodeID = 1 << p.getNumVertices();
     bool *visited = new bool[maxNodeID];
@@ -4402,14 +4720,14 @@ std::vector<Node> getAllNodes(const PatternGraph &p) {
     // get core graph edges and push them into q.
     ui numEdge = 0;
     Edge* edgeList = p.coreUndirectedEdges(numEdge);
-    for (int i = 0; i < numEdge; ++i) {
-        VertexID u1 = edgeList[i].first, u2 = edgeList[i].second;
-        int id = (1 << u1) + (1 << u2);
-        visited[id] = true;
-        VertexID *vertices = new VertexID[2];
-        vertices[0] = u1, vertices[1] = u2;
-        q.emplace(id, vertices, 2, 0);
-    }
+//    for (int i = 0; i < numEdge; ++i) {
+//        VertexID u1 = edgeList[i].first, u2 = edgeList[i].second;
+//        int id = (1 << u1) + (1 << u2);
+//        visited[id] = true;
+//        VertexID *vertices = new VertexID[2];
+//        vertices[0] = u1, vertices[1] = u2;
+//        q.emplace(id, vertices, 2, 0);
+//    }
 
     while (!q.empty()) {
         Node tau = q.front();
@@ -4475,10 +4793,73 @@ std::vector<Node> getCandidateNodes(const Tree &t, const std::vector<Node> &allN
     return result;
 }
 
-std::vector<Tree> getAllTree(const PatternGraph &p) {
-    std::vector<Node> allNodes = getAllNodes(p);
-    return getAllTree(allNodes, p);
+void findCliquesRecursive(const PatternGraph &graph,
+                          std::vector<VertexID> &currentClique,
+                          std::vector<VertexID> &potentialClique,
+                          std::vector<VertexID> &processedVertices,
+                          std::queue<Node> &cliques) {
+    if (potentialClique.empty() && processedVertices.empty()) {
+        Node node;
+        node.numVertices = currentClique.size();
+        node.vertices = new VertexID[node.numVertices];
+        for (int i = 0; i < currentClique.size(); ++i) {
+            node.vertices[i] = currentClique[i];
+            node.id += 1 << currentClique[i];
+        }
+        std::copy(currentClique.begin(), currentClique.end(), node.vertices);
+        cliques.push(node);
+        return;
+    }
+    for (int i = 0; i < potentialClique.size(); ++i) {
+        std::vector<VertexID> newCurrentClique = currentClique;
+        VertexID newVertex = potentialClique[i];
+        newCurrentClique.push_back(newVertex);
+        std::vector<VertexID> newPotentialClique, newProcessedClique;
+        // refine potentialClique and processedVertices
+        for (auto & u: potentialClique) {
+            if (u > newVertex && graph.isEdge(u, newVertex))
+                newPotentialClique.push_back(u);
+        }
+        for (auto & u: processedVertices) {
+            if (graph.isEdge(u, newVertex))
+                newProcessedClique.push_back(u);
+        }
+        findCliquesRecursive(graph, newCurrentClique, newPotentialClique, newProcessedClique, cliques);
+        processedVertices.push_back(newVertex);
+    }
 }
+
+std::queue<Node> findMaximalCliques(const PatternGraph &graph) {
+    std::queue<Node> cliques;
+    std::vector<VertexID> currentClique, potentialClique(graph.getNumVertices()), processedVertices;
+
+    // Initialize potentialClique with all vertices
+    for (ui i = 0; i < graph.getNumVertices(); ++i) {
+        potentialClique[i] = i;
+    }
+
+    findCliquesRecursive(graph, currentClique, potentialClique, processedVertices, cliques);
+    return cliques;
+}
+
+std::vector<Tree> getAllTree(const PatternGraph &p) {
+#ifdef ONLY_PLAN
+    auto start = std::chrono::steady_clock::now();
+#endif
+
+    std::vector<Node> allNodes = getAllNodes(p);
+
+#ifdef ONLY_PLAN
+    auto result = getAllTree(allNodes, p);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsedSeconds = end - start;
+    gTDTime += elapsedSeconds.count();
+    return result;
+#else
+    return getAllTree(allNodes, p);
+#endif
+}
+
 
 std::vector<Tree> getAllTree(const std::vector<Node> &allNode, const PatternGraph &p) {
     std::vector<Tree> trees;
@@ -4504,6 +4885,8 @@ std::vector<Tree> getAllTree(const std::vector<Node> &allNode, const PatternGrap
             if (!idExists) {
                 trees.push_back(t);
                 treeID.push_back(nodeIDs);
+                // early termination
+                if (p.getNumVertices() > 8 && trees.size() >= 500) return trees;
             }
         }
         else {

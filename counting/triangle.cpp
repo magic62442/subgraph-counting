@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/9/27.
+// Created by anonymous author on 2022/9/27.
 //
 
 #include "triangle.h"

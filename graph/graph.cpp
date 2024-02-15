@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/7/19.
+// Created by anonymous author on 2022/7/19.
 //
 
 #include "graph.h"
@@ -700,7 +700,7 @@ void PatternGraph::computeCandidateRules() {
     for (VertexID i = 0; i < n; ++i) {
         for (VertexID j = 0; j < n; ++j) {
             if (isEdge(i, j))
-                ADDONEARC(g, i, j, m);
+                        ADDONEARC(g, i, j, m);
         }
     }
     std::vector<int> initialV;

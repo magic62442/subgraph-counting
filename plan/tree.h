@@ -14,6 +14,8 @@
 #include <functional>
 #include <stack>
 
+extern double gTDTime;
+
 struct Node {
     int id;
     VertexID *vertices;
@@ -68,6 +70,8 @@ struct Node {
     void computeValidRules(const PatternGraph &p, std::set<VertexID> &allCut);
     void computeCandidateRules(const PatternGraph &p, const std::vector<VertexID *> &childCuts, const std::vector<ui> &cutSizes);
     void cliqueNodeRules(const PatternGraph &p, const std::vector<VertexID *> &childCuts, const std::vector<ui> &cutSizes);
+    void readFromStream(std::ifstream& inFile);
+    void writeToStream(std::ofstream& outFile);
 };
 
 class Tree {
@@ -470,6 +474,9 @@ public:
     // the followings should be removed in the future
     int cutCase(const PatternGraph &p) const;
     std::vector<Tree> realTree(const Pattern &p, bool sign);
+    void writeToFile(const std::string& filename);
+    void readFromFile(const std::string& filename);
+    void wheel9Tree();
 };
 
 // concentrated node
@@ -520,11 +527,19 @@ struct ConNode {
                    const PatternGraph &p, bool useTriangle);
     void merge(const ConNode &rhs, const PatternGraph &p1, const PatternGraph &p2);
     void print() const;
+    void writeToStream(std::ofstream& outFile);
+    void readFromStream(std::ifstream& inFile);
 };
 
 static std::map<CanonType, double> canonToFW;
 std::vector<Node> getAllNodes(const PatternGraph &p);
 std::vector<Node> getCandidateNodes(const Tree &t, const std::vector<Node> &allNodes, const PatternGraph &p);
+void findCliquesRecursive(const PatternGraph &graph,
+                          std::vector<VertexID> &currentClique,
+                          std::vector<VertexID> &potentialClique,
+                          std::vector<VertexID> &processedVertices,
+                          std::queue<Node> &cliques);
+std::queue<Node> findMaximalCliques(const PatternGraph &graph);
 std::vector<Tree> getAllTree(const PatternGraph &p);
 std::vector<Tree> getAllTree(const std::vector<Node> &allNode, const PatternGraph &p);
 void fractionalWidth(struct Node &tau, const PatternGraph &p, const std::vector<VertexID> &pathToTau);

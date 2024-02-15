@@ -11,7 +11,7 @@ generateLocalOrders(const Node &tau, const PatternGraph &p, const std::vector<Ve
 std::vector<ui>
 getDegSeqAndSrcPos(const std::vector<VertexID> &localOrder, int &srcPos, const Pattern &p, VertexID *vertices, ui numVertices);
 std::vector<ui> evaluateLocalOrder(const std::vector<VertexID> &partitionOrder,
-           const std::vector<VertexID> &localOrder, int &inNum, const Pattern &p, VertexID *vertices, ui numVertices);
+                                   const std::vector<VertexID> &localOrder, int &inNum, const Pattern &p, VertexID *vertices, ui numVertices);
 bool firstSequenceLarger(const std::vector<ui> &seq1, const std::vector<ui> &seq2);
 void simpleLocalOrder(Tree &t, const Pattern &p);
 std::vector<Tree> bestLocalOrder(std::vector<std::vector<std::vector<Tree>>> &minWidth2Tree, const Pattern &p);

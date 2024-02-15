@@ -4,7 +4,7 @@
 
 #include "equation.h"
 
-double gShrinkTime = 0.0;
+double gEquationTime = 0.0;
 
 std::vector<VertexID> mergePair(
         const std::vector<std::vector<VertexID>> &independentPartitions,
@@ -112,7 +112,7 @@ std::vector<Pattern> computeShrinkages(const Tree &t, const Pattern &p) {
 #ifdef ONLY_PLAN
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsedSeconds = end - start;
-    gShrinkTime += elapsedSeconds.count();
+    gEquationTime += elapsedSeconds.count();
 #endif
     return shrinkage;
 }
@@ -234,7 +234,14 @@ bool genEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &pat
     rt.rebuildCut();
     cn = ConNode(p, rt);
     if (cn.num != 0) {
+        int divideFactor = p.getDivideFactor();
+        patterns[divideFactor].push_back(rootPattern);
+        trees[divideFactor].push_back(rootBestDecomp);
         conNodeDecompose(cn, p, rt.getNode(0), symmetryBreaking, prefix, useTriangle);
+        CanonType canonValue = p.getCanonValue();
+        gCanon2Pattern[canonValue] = rootPattern;
+        gCanon2Tree[canonValue] = rootBestDecomp;
+        gCanon2Shrinkage[canonValue] = computeShrinkages(rt, rootPattern);
         return false;
     }
     if (p.getNumVertices() < 6 && uFactor > 1 && symmetryBreaking && rootBestDecomp[0].getFhw() >= 2.0) {
@@ -247,7 +254,6 @@ bool genEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &pat
         for (const auto &pt: outGraphs)
             if (pt.getAutoSize() > dFactor)
                 dFactor = pt.getAutoSize();
-//        if (numDAGs < 10 && uFactor > dFactor) useDAG = true;
         if (uFactor > dFactor) useDAG = true;
     }
     visitedDecomp.clear();
@@ -646,110 +652,6 @@ std::vector<Pattern> homoShrinkage(const Pattern &p, std::vector<int> &mu) {
 
     }
     return shrinkage;
-}
-
-void homoEquationOld(const PatternGraph &p, std::map<int, std::vector<Pattern>> &patterns,
-                     std::map<int, std::vector<std::vector<Tree>>> &trees, bool prefix) {
-    int orbitType = p.getOrbitType();
-    // the following maps use the divide factor and the canonical value of the out DAG as key
-    // visited decompositions for the root pattern
-    std::vector<Tree> visitedDecomp;
-    // compute directed multi aggregation and decide whether to use directed
-    // the patterns that need to enumerate
-    Pattern rootPattern(p);
-    visitedDecomp.clear();
-    bool sign = true;
-    int divideFactor = p.getDivideFactor();
-    visitedDecomp.clear();
-    std::queue<Pattern> q;
-    rootPattern.setSingleAggre();
-    q.push(rootPattern);
-    while (!q.empty()) {
-        std::vector<Pattern> pts;
-        // pop all patterns in queue
-        while (!q.empty()) {
-            pts.push_back(q.front());
-            q.pop();
-        }
-        for (auto &s : pts) {
-            // s is always single-aggregation
-            ui numVertices = s.u.getNumVertices();
-            CanonType canonValue = s.u.getCanonValue();
-            bool exists = false;
-            for (int i = 0; i < patterns[divideFactor].size(); ++i) {
-                const Pattern pt = patterns[divideFactor][i];
-                if (canonValue == pt.u.getCanonValue()) {
-                    exists = true;
-                    const std::vector<Tree> bestTree = gCanon2Tree[canonValue];
-                    int multiFactor = bestTree[0].getMultiFactor();
-                    if (!sign) multiFactor = -multiFactor;
-                    trees[divideFactor][i][0].adjustMultiFactor(multiFactor);
-                    std::vector<Pattern> shrinkage = gCanon2Shrinkage[canonValue];
-                    for (auto &shr: shrinkage) {
-                        if (shr.u.getNumVertices() != 0) {
-                            q.push(shr);
-                        }
-                    }
-                }
-                if (exists) break;
-            }
-            if (exists) continue;
-            if (gCanon2Tree.find(canonValue) != gCanon2Tree.end()) {
-                std::vector<Tree> rootedTrees = gCanon2Tree[canonValue];
-                if (!sign) {
-                    for (Tree &t: rootedTrees) t.setMultiFactor(-t.getMultiFactor());
-                }
-                patterns[divideFactor].push_back(gCanon2Pattern[canonValue]);
-                trees[divideFactor].push_back(rootedTrees);
-                std::vector<Pattern> shrinkage = gCanon2Shrinkage[canonValue];
-                for (auto &shr: shrinkage) {
-                    if (shr.u.getNumVertices() != 0) {
-                        shr.u.setSingleAggre();
-                        q.push(shr);
-                    }
-                }
-            }
-            else {
-                std::vector<Tree> allTree = getAllTree(s.u);
-                std::vector<Tree> rootedTrees = getBestDecomposition(s, allTree, visitedDecomp, sign, prefix, true);
-                for (Tree &t : rootedTrees)
-                    t.adjustWeight();
-                patterns[divideFactor].push_back(s);
-                trees[divideFactor].push_back(rootedTrees);
-                std::vector<Pattern> shrinkage = homoShrinkage(s);
-                for (auto &shr: shrinkage) {
-                    if (shr.u.getNumVertices() != 0) {
-                        shr.u.setSingleAggre();
-                        q.push(shr);
-                    }
-                }
-                gCanon2Pattern[canonValue] = s;
-                for (Tree &t: rootedTrees) {
-                    if (t.getMultiFactor() < 0) t.setMultiFactor(-t.getMultiFactor());
-                }
-                gCanon2Tree[canonValue] = rootedTrees;
-                gCanon2Shrinkage[canonValue] = shrinkage;
-            }
-        }
-        sign = !sign;
-    }
-
-    for (auto it = patterns.begin(); it != patterns.end(); ++it) {
-        int divideFactor = it->first;
-        for (int i = 0; i < it->second.size(); ++i) {
-            for (int j = 0; j < trees[divideFactor][i].size(); ++j) {
-                Tree &t = trees[divideFactor][i][j];
-                if (p.getNumVertices() <= 5) {
-                    t.setPrefixKeyOrbit(it->second[i]);
-                }
-                int multiFactor;
-                if (i != 0)
-                    multiFactor = gCanon2Tree[patterns[divideFactor][i].u.getCanonValue()][0].getMultiFactor();
-                else multiFactor = t.getMultiFactor();
-                t.dropRules(patterns[divideFactor][i], true, multiFactor);
-            }
-        }
-    }
 }
 
 void homoEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &patterns,

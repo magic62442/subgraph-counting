@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/8/30.
+// Created by anonymous author on 2022/8/30.
 //
 
 #include "command.h"
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     std::cout << "result path: " << resultPath << std::endl;
     std::cout << "using batch query: " << batchQuery << std::endl;
     std::cout << "sharing nodes computation: " << shareNode << std::endl;
-    std::cout << "using intersection cache: " << useTriangle << std::endl;
+    std::cout << "using triangle: " << useTriangle << std::endl;
     std::cout << "set intersection type: " << SI << std::endl;
     DataGraph dun = DataGraph();
     dun.loadDataGraph(dataGraphPath);
@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
     Triangle triangle;
     if (useTriangle) {
         triangle.load(trianglePath, m / 2);
-        std::cout << "triangle memory cost: " << triangle.memoryCost() << std::endl;
     }
     auto start = std::chrono::steady_clock::now();
     EdgeID *outID = buildInID2OutID(din, dout);
@@ -243,7 +242,10 @@ int main(int argc, char **argv) {
         if (!resultPath.empty()) saveCount(resultPath, mathCalH, dun, batchQuery, files, orbitTypes);
         for (int i = 0; i < patternGraphs.size(); ++i)
             delete[] mathCalH[i];
-        std::cout << "compute shrinakge time: " << gShrinkTime << ", " << gShrinkTime / totalPlanTime << std::endl;
+        std::cout << "compute equation time: " << gEquationTime << std::endl;
+        std::cout << "compute tree decomposition: " << gTDTime << std::endl;
+        std::cout << "compute symmetry time: " << gSymmTime << std::endl;
+        std::cout << "compute attribute order: " << gOrderTime << std::endl;
         std::cout << "planning time: " << totalPlanTime << ", total execution time: "
                   << totalExeTime << ", total number of patterns: " << totalNumPatterns << "\ntotal number of nodes: "
                   << totalNodes << ", average size of nodes: "<< averageNodeSize / totalNodes
@@ -259,19 +261,19 @@ int main(int argc, char **argv) {
         std::vector<Pattern> conPatterns;
         std::vector<int> conFactors;
         std::vector<int> conIDs;
-        Forest fu, fuShrink;
+        Forest fu, fuCover;
         std::vector<Forest> directedF;
-        std::vector<CanonType> shrinkCanon;
-        std::vector<int> shrinkOrbit;
-        std::vector<int> shrinkRootOrbit;
+        std::vector<CanonType> coverCanon;
+        std::vector<int> coverOrbit;
+        std::vector<int> coverRootOrbit;
         std::vector<HashTable> result(patternGraphs.size());
-        std::vector<HashTable> shrinkageH;
+        std::vector<HashTable> coverH;
         std::vector<HashTable> uH;
         std::vector<std::vector<HashTable>> dH;
-        // for the ith Pattern, jth shrinkage, its position in the shrinkageH and the factor
-        std::vector<std::vector<int>> shrinkPos(patternGraphs.size());
-        // for the ith pattern, position j, the multiply factor of that shrinkage
-        std::vector<std::vector<int>> shrinkMultiFactors(patternGraphs.size());
+        // for the ith Pattern, jth cover, its position in the coverH and the factor
+        std::vector<std::vector<int>> coverPos(patternGraphs.size());
+        // for the ith pattern, position j, the multiply factor of that cover
+        std::vector<std::vector<int>> coverMultiFactors(patternGraphs.size());
         std::vector<int> divideFactors(patternGraphs.size());
         std::vector<bool> isUndirected(patternGraphs.size(), false);
         std::vector<HashTable> allocatedHashTable;
@@ -363,7 +365,7 @@ int main(int argc, char **argv) {
                 }
                 else {
                     isUndirected[i] = true;
-                    // put the first pattern to fu, the remaining patterns to fShrinkage
+                    // put the first pattern to fu, the remaining patterns to fcover
                     int divideFactor = patterns.begin() -> first;
                     divideFactors[i] = divideFactor;
                     const std::vector<Pattern> &allPattern = patterns.begin()->second;
@@ -372,16 +374,16 @@ int main(int argc, char **argv) {
                     std::map<int, std::vector<std::vector<Tree>>> rootTree;
                     rootPattern[divideFactor].push_back(allPattern[0]);
                     rootTree[divideFactor].push_back(allTree[0]);
-                    shrinkPos[i] = std::vector<int>(allPattern.size() - 1);
-                    shrinkMultiFactors[i] = std::vector<int>(allPattern.size() - 1 + shrinkCanon.size());
+                    coverPos[i] = std::vector<int>(allPattern.size() - 1);
+                    coverMultiFactors[i] = std::vector<int>(allPattern.size() - 1 + coverCanon.size());
                     for (int j = 1; j < allPattern.size(); ++j) {
                         bool exists = false;
                         int rootOrbit = allTree[j][0].getNode(allTree[j][0].getRootID()).v2o[0];
-                        for (int k = 0; k < shrinkCanon.size(); ++k) {
-                            if (allPattern[j].u.getCanonValue() == shrinkCanon[k] && allPattern[j].u.getOrbit(0) == shrinkOrbit[k]
-                               && rootOrbit == shrinkRootOrbit[k]) {
-                                shrinkPos[i][j - 1] = k;
-                                shrinkMultiFactors[i][k] = allTree[j][0].getMultiFactor();
+                        for (int k = 0; k < coverCanon.size(); ++k) {
+                            if (allPattern[j].u.getCanonValue() == coverCanon[k] && allPattern[j].u.getOrbit(0) == coverOrbit[k]
+                                && rootOrbit == coverRootOrbit[k]) {
+                                coverPos[i][j - 1] = k;
+                                coverMultiFactors[i][k] = allTree[j][0].getMultiFactor();
                                 exists = true;
                                 break;
                             }
@@ -409,18 +411,18 @@ int main(int argc, char **argv) {
                                     mTable += 2;
                                 }
                             }
-                            shrinkPos[i][j - 1] = shrinkCanon.size();
-                            shrinkMultiFactors[i][shrinkCanon.size()] = allTree[j][0].getMultiFactor();
+                            coverPos[i][j - 1] = coverCanon.size();
+                            coverMultiFactors[i][coverCanon.size()] = allTree[j][0].getMultiFactor();
                             allTree[j][0].setMultiFactor(1);
-                            shrinkCanon.push_back(allPattern[j].u.getCanonValue());
-                            shrinkOrbit.push_back(allPattern[j].u.getOrbit(0));
-                            shrinkRootOrbit.push_back(rootOrbit);
-                            std::map<int, std::vector<Pattern>> shrinkPattern;
-                            std::map<int, std::vector<std::vector<Tree>>> shrinkTree;
-                            shrinkPattern[1].push_back(allPattern[j]);
-                            shrinkTree[1].push_back(allTree[j]);
-                            fuShrink.loadQuery(shrinkPattern, shrinkTree, forestShare);
-                            shrinkageH.push_back(h);
+                            coverCanon.push_back(allPattern[j].u.getCanonValue());
+                            coverOrbit.push_back(allPattern[j].u.getOrbit(0));
+                            coverRootOrbit.push_back(rootOrbit);
+                            std::map<int, std::vector<Pattern>> coverPattern;
+                            std::map<int, std::vector<std::vector<Tree>>> coverTree;
+                            coverPattern[1].push_back(allPattern[j]);
+                            coverTree[1].push_back(allTree[j]);
+                            fuCover.loadQuery(coverPattern, coverTree, forestShare);
+                            coverH.push_back(h);
                         }
                     }
                     uH.push_back(result[i]);
@@ -466,17 +468,17 @@ int main(int argc, char **argv) {
         elapsedSeconds = end - start;
         totalExeTime += elapsedSeconds.count();
         std::cout << "finished compressed node. time: " << totalExeTime << "s" << std::endl;
-        // 2. execute undirected shrinkCanon, undirected root patterns and directed patterns
+        // 2. execute undirected coverCanon, undirected root patterns and directed patterns
         if (patternSize <= 5) {
             start = std::chrono::steady_clock::now();
-            executeForest(fuShrink, shrinkageH, din, dout, dun, useTriangle, triangle, allocatedHashTable,
+            executeForest(fuCover, coverH, din, dout, dun, useTriangle, triangle, allocatedHashTable,
                           outID, unID, reverseID, startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV, sg, cliqueVertices);
             for (HashTable h: allocatedHashTable) delete[] h;
             allocatedHashTable.clear();
             end = std::chrono::steady_clock::now();
             elapsedSeconds = end - start;
             totalExeTime += elapsedSeconds.count();
-            std::cout << "finished undirected shrinkages. time: " << totalExeTime << std::endl;
+            std::cout << "finished undirected covers. time: " << totalExeTime << std::endl;
             start = std::chrono::steady_clock::now();
             executeForest(fu, uH,  din, dout, dun, useTriangle, triangle, allocatedHashTable,
                           outID, unID, reverseID, startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV, sg, cliqueVertices);
@@ -489,9 +491,9 @@ int main(int argc, char **argv) {
         }
         else {
             start = std::chrono::steady_clock::now();
-            for (int i = 0; i < fuShrink.numQuery; ++i) {
-                const Tree &t = fuShrink.allTree[i];
-                const Pattern &p = fuShrink.allPattern[i];
+            for (int i = 0; i < fuCover.numQuery; ++i) {
+                const Tree &t = fuCover.allTree[i];
+                const Pattern &p = fuCover.allPattern[i];
                 for (int l = 0; l < t.getNumNodes(); ++l) memset(ht[l], 0, sizeof(Count) * m);
                 if (t.getExecuteMode()) {
                     executeTree(t, din, dout, dun, useTriangle, triangle, p, ht, outID, unID, reverseID,
@@ -504,18 +506,18 @@ int main(int argc, char **argv) {
                 HashTable h = ht[t.getRootID()];
                 int orbitType = patternGraphs[i].getOrbitType();
                 if (orbitType == 0) {
-                    shrinkageH[i][0] = h[0];
+                    coverH[i][0] = h[0];
                 }
                 else if (orbitType == 1) {
                     for (int j = 0; j < n; ++j) {
-                        shrinkageH[i][j] = h[j];
+                        coverH[i][j] = h[j];
                     }
                 }
             }
             end = std::chrono::steady_clock::now();
             elapsedSeconds = end - start;
             totalExeTime += elapsedSeconds.count();
-            std::cout << "finished undirected shrinkages. time: " << totalExeTime << std::endl;
+            std::cout << "finished undirected covers. time: " << totalExeTime << std::endl;
             start = std::chrono::steady_clock::now();
             for (int i = 0; i < fu.numQuery; ++i) {
                 const Tree &t = fu.allTree[i];
@@ -557,27 +559,27 @@ int main(int argc, char **argv) {
         elapsedSeconds = end - start;
         totalExeTime += elapsedSeconds.count();
         std::cout << "finished directed patterns. time : " << totalExeTime << std::endl;
-        // 3. subtract shrinkage count for undirected patterns
+        // 3. subtract cover count for undirected patterns
         for (int i = 0; i < patternGraphs.size(); ++i) {
             if (!isUndirected[i]) continue;
             const PatternGraph &pg = patternGraphs[i];
             int orbitType = pg.getOrbitType();
             int divideFactor = divideFactors[i];
-            for (int j = 0; j < shrinkPos[i].size(); ++j) {
-                HashTable h = shrinkageH[shrinkPos[i][j]];
+            for (int j = 0; j < coverPos[i].size(); ++j) {
+                HashTable h = coverH[coverPos[i][j]];
                 if (orbitType == 0)
-                    result[i][0] += h[0] * shrinkMultiFactors[i][shrinkPos[i][j]];
+                    result[i][0] += h[0] * coverMultiFactors[i][coverPos[i][j]];
                 else if (orbitType == 1) {
                     for (int k = 0; k < n; ++k)
-                        result[i][k] += h[k] * shrinkMultiFactors[i][shrinkPos[i][j]];
+                        result[i][k] += h[k] * coverMultiFactors[i][coverPos[i][j]];
                 }
                 else if (orbitType == 2 && pg.isEOrbitDir()) {
                     for (int k = 0; k < m / 2; ++k)
-                        result[i][k] += h[k] * shrinkMultiFactors[i][shrinkPos[i][j]];
+                        result[i][k] += h[k] * coverMultiFactors[i][coverPos[i][j]];
                 }
                 else {
                     for (int k = 0; k < m; ++k)
-                        result[i][k] += h[k] * shrinkMultiFactors[i][shrinkPos[i][j]];
+                        result[i][k] += h[k] * coverMultiFactors[i][coverPos[i][j]];
                 }
             }
             if (orbitType == 0)
@@ -596,7 +598,10 @@ int main(int argc, char **argv) {
             }
         }
 #endif
-        std::cout << "compute shrinakge time: " << gShrinkTime << ", " << gShrinkTime / totalPlanTime << std::endl;
+        std::cout << "compute equation time: " << gEquationTime << std::endl;
+        std::cout << "compute tree decomposition: " << gTDTime << std::endl;
+        std::cout << "compute symmetry time: " << gSymmTime << std::endl;
+        std::cout << "compute order time: " << gOrderTime << std::endl;
         std::cout << "total planning time: " << totalPlanTime << ", total execution time: " << totalExeTime
                   << ", total time: " << totalPlanTime + totalExeTime << std::endl;
         std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect

@@ -9,6 +9,9 @@
 #include "cost_estimator.h"
 #include <queue>
 
+extern double gSymmTime;
+extern double gOrderTime;
+
 int computeNumRules(Tree &t, const PatternGraph &p);
 std::vector<Pattern> computeShrinkages(const Tree &t, const Pattern &p);
 std::vector<std::vector<Tree>>

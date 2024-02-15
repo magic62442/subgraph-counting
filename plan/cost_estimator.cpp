@@ -1,5 +1,5 @@
 //
-// Created by Qiyan LI on 2022/8/8.
+// Created by anonymous author on 2022/8/8.
 //
 
 #include "cost_estimator.h"
@@ -76,7 +76,7 @@ std::vector<ui> getDegSeqAndSrcPos(const std::vector<VertexID> &localOrder, int 
 
 // given a local order, get its degree sequence and the number of in-neighbor lists that need to be used
 std::vector<ui> evaluateLocalOrder(const std::vector<VertexID> &partitionOrder,
-   const std::vector<VertexID> &localOrder, int &inNum, const Pattern &p, VertexID *vertices, ui numVertices) {
+                                   const std::vector<VertexID> &localOrder, int &inNum, const Pattern &p, VertexID *vertices, ui numVertices) {
     inNum = 0;
     std::vector<int> local2Pos(p.u.getNumVertices());
     for (int i = 0; i < localOrder.size(); ++i) {
@@ -286,7 +286,7 @@ Tree bestLocalOrder(std::vector<Tree> &minWidth2Tree, const Pattern &p) {
             }
         }
         if (treeTotalInNum < smallestInNum || (treeTotalInNum == smallestInNum &&
-                                                treeOrderLength > largestLength)) {
+                                               treeOrderLength > largestLength)) {
             smallestInNum = treeTotalInNum;
             index = l;
         }
