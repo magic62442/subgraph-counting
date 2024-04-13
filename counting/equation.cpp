@@ -215,7 +215,7 @@ void adjustAggreInfo(std::vector<Tree> &trees, bool sign, const VertexID *aggreV
 // the input p is undirected and multi aggregation
 bool genEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &patterns,
                  std::map<int, std::vector<std::vector<Tree>>> &trees, ConNode &cn, bool useTriangle,
-                 bool symmetryBreaking, bool prefix) {
+                 bool symmetryBreaking, bool prefix, bool useDirected) {
     int orbitType = p.getOrbitType();
     // visited decompositions for the root pattern
     std::vector<Tree> visitedDecomp;
@@ -257,7 +257,7 @@ bool genEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &pat
         if (uFactor > dFactor) useDAG = true;
     }
     visitedDecomp.clear();
-    if (useDAG) {
+    if (useDirected && useDAG) {
 //        std::cout << "num DAG: " << numDAGs << std::endl;
         // here trees are relabeled according to canonical labels
         std::map<CanonType, std::vector<Tree>> canon2AllTree;

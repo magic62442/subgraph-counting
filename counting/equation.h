@@ -26,7 +26,7 @@ void adjustAggreInfo(std::vector<Tree> &trees, bool sign, const VertexID *aggreV
                      const Pattern &p, std::vector<Tree> &visitedDecomp, bool useTriangle);
 bool genEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &patterns,
                  std::map<int, std::vector<std::vector<Tree>>> &trees, ConNode &cn, bool useTriangle,
-                 bool symmetryBreaking, bool prefix);
+                 bool symmetryBreaking, bool prefix, bool useDirected);
 std::vector<VertexID> mergePairHomo(
         const std::vector<std::vector<VertexID>> &independentPartitions,
         const std::vector<VertexID> &oldPartition,

@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
             start = std::chrono::steady_clock::now();
             ConNode cn;
             if (!patternGraphs[i].isClique()) {
-                genEquation(patternGraphs[i], patterns, trees, cn, useTriangle, true, true);
+                genEquation(patternGraphs[i], patterns, trees, cn, useTriangle, true, true, true);
             }
             end = std::chrono::steady_clock::now();
             elapsedSeconds = end - start;
@@ -252,8 +252,7 @@ int main(int argc, char **argv) {
                   << ", number of distinct nodes: " << visitedNode.size() << std::endl
                   << "number of vertex hash tables (except for root node): " << numVertexTable
                   << ", number of edge hash tables (except for root node): " << numEdgeTable << std::endl;
-        std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect
-                  << ", number of edge ID: " << gNumEdgeID << ", number of update: " << gNumUpdate << std::endl;
+        std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect << std::endl;
     }
 
     if (shareNode) {
@@ -322,7 +321,7 @@ int main(int argc, char **argv) {
                 std::map<int, std::vector<Pattern>> patterns;
                 std::map<int, std::vector<std::vector<Tree>>> trees;
                 ConNode cn;
-                bool directed = genEquation(pg, patterns, trees, cn, useTriangle, true, true);
+                bool directed = genEquation(pg, patterns, trees, cn, useTriangle, true, true, true);
                 if (cn.num != 0) {
                     if (orbitType == 0) cn.hashTables[0] = result[i];
                     else if (orbitType == 1) {
@@ -434,8 +433,6 @@ int main(int argc, char **argv) {
             totalPlanTime += elapsedSeconds.count();
         }
         double tableSize = (double)(nTable * n + mTable * m / 2) * sizeof(Count) / 1e9;
-//        std::cout << "allocated memory for hash tables in the main function: size = " <<  tableSize << "GB" << std::endl;
-//        std::cout << "number of vertex tables: " << nTable << ", number of edge tables: " << mTable << std::endl;
 #ifndef ONLY_PLAN
         // 1. execute ConNodes
         start = std::chrono::steady_clock::now();
@@ -604,8 +601,7 @@ int main(int argc, char **argv) {
         std::cout << "compute order time: " << gOrderTime << std::endl;
         std::cout << "total planning time: " << totalPlanTime << ", total execution time: " << totalExeTime
                   << ", total time: " << totalPlanTime + totalExeTime << std::endl;
-        std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect
-                  << ", number of edge ID: " << gNumEdgeID << ", number of update: " << gNumUpdate << std::endl;
+        std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect  << std::endl;
         int orbitType = patternGraphs[0].getOrbitType();
         std::vector<int> orbitTypes(files.size(), orbitType);
         if (!resultPath.empty()) saveCount(resultPath, result, dun, batchQuery, files, orbitTypes);
