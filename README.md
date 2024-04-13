@@ -87,8 +87,8 @@ We preprocessed the data graphs in our experiments by indexing triangles as a si
 Example:
 
 ```
-./build/executable/scope.out -q ./exp/pattern_graph/q1 -d ./exp/data_graph/web-spam.txt -t ./exp/data_graph/web-spamt.bin -r ./result/q1/web-spam -b -share
-./build/executable/scope.out -q ./exp/pattern_graph/q1/34.txt -d ./exp/data_graph/web-spam.txt -r ./result/q1/web-spam/34.txt -share
+./build/executable/scope.out -q ./exp/pattern_graph/5voc -d ./exp/data_graph/web-spam.txt -t ./exp/data_graph/web-spamt.bin -r ./result/5voc/web-spam -b -share
+./build/executable/scope.out -q ./exp/pattern_graph/5voc/62.txt -d ./exp/data_graph/web-spam.txt -r ./result/5voc/web-spam/62.txt
 ```
 
 In the output, the $i$-th line shows the local subgraph count of the data node $i-1$.
