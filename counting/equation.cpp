@@ -232,7 +232,7 @@ bool genEquation(const PatternGraph &p, std::map<int, std::vector<Pattern>> &pat
     int uFactor = p.getAutoSize() / rootBestDecomp[0].getMultiFactor() / rootBestDecomp[0].getAggreWeight().size();
     Tree &rt = rootBestDecomp[0];
     rt.rebuildCut();
-    cn = ConNode(p, rt);
+    if (useTriangle) cn = ConNode(p, rt);
     if (cn.num != 0) {
         int divideFactor = p.getDivideFactor();
         patterns[divideFactor].push_back(rootPattern);
