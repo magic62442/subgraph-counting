@@ -38,7 +38,7 @@ make
 
 ## Input format
 
-The data graph should start with 'n, m' where n is the number of nodes and m is the number of undirected edges, followed by the edge list. The node id should be consecutive and should start from 0.
+The data graph should start with 'n, m' where n is the number of nodes and m is the number of undirected edges, followed by the edge list. The node id should be consecutive and should start from 0. Each edge only appears once, in the format of 'smaller_vertex_id larger_vertex_id'. The separator is a ' '.
 
 Example:
 
